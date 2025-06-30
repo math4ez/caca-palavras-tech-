@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caça-Palavras Tech com Temas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f5f5f4; /* Stone-100 */
+            color: #44403c; /* Stone-700 */
+        }
+        .letter-cell {
+            transition: all 0.2s ease-in-out;
+            user-select: none;
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 700;
+        }
+        .selecting {
+            background-color: #fde047; /* Yellow-300 */
+            color: #713f12; /* Yellow-900 */
+            transform: scale(1.1);
+        }
+        .found {
+            background-color: #86efac; /* Green-300 */
+            color: #14532d; /* Green-900 */
+            font-weight: 800;
+            border-radius: 0.5rem;
+        }
+        .word-found {
+            text-decoration: line-through;
+            color: #a8a29e; /* Stone-400 */
+            opacity: 0.8;
+        }
+        #grid-container {
+            display: grid;
+            touch-action: none;
+            background-color: #ffffff;
+            border-radius: 1rem;
+            border: 2px solid #e7e5e4; /* Stone-200 */
+            padding: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .loader {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-bottom-color: #ffffff;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .theme-button {
+            transition: transform 0.2s, box-shadow 0.2s;
+            background-color: #ffffff;
+            border: 2px solid transparent;
+        }
+        .theme-button:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            border-color: #2dd4bf; /* Teal-400 */
+        }
+        .action-button {
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            font-weight: 700;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .action-button:disabled {
+            transform: none;
+            box-shadow: none;
+        }
+        .difficulty-button {
+            transition: all 0.2s;
+        }
+        .difficulty-button.active {
+            background-color: #14b8a6; /* Teal-500 */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-stone-100 flex flex-col min-h-screen">
+
+    <div id="home-screen" class="container mx-auto p-4 sm:p-8 text-center flex-grow">
+        <header class="mb-10">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-teal-600">Caça-Palavras Tech</h1>
+            <p class="text-stone-500 mt-3 text-xl">Escolha a dificuldade e depois um tema para começar!</p>
+        </header>
+
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-stone-700 mb-4">Nível de Dificuldade</h2>
+            <div id="difficulty-selector" class="inline-flex rounded-lg bg-stone-200 p-1">
+                <button id="difficulty-easy" class="difficulty-button px-6 py-2 rounded-md font-semibold text-stone-600">Fácil</button>
+                <button id="difficulty-normal" class="difficulty-button px-6 py-2 rounded-md font-semibold text-stone-600">Normal</button>
+            </div>
+        </div>
+
+        <div id="theme-selection" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            </div>
+
+        <div class="mt-12">
+            <a href="https://tecnologiapara3idade.com.br" target="_blank" rel="noopener noreferrer" class="action-button inline-flex items-center justify-center gap-3 bg-white text-teal-600 rounded-lg hover:bg-teal-50 px-8">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Visite o site Tecnologia para 3ª Idade
+            </a>
+        </div>
+    </div>
+
+    <div id="game-screen" class="hidden container mx-auto p-4 sm:p-8 flex-grow">
+        <header class="text-center mb-8">
+            <h1 id="game-title" class="text-3xl md:text-4xl font-extrabold text-teal-600"></h1>
+            <p class="text-stone-500 mt-2 text-lg">Encontre as palavras sobre o tema. Clique e arraste para selecionar.</p>
+        </header>
+
+        <main class="bg-stone-50 p-6 md:p-8 rounded-2xl shadow-lg w-full max-w-5xl mx-auto">
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2">
+                    <div id="grid-container" class="aspect-square"></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-inner">
+                    <h2 class="text-2xl font-bold mb-4 text-teal-700">Palavras:</h2>
+                    <div id="word-list" class="space-y-2 text-xl text-stone-600"></div>
+                    <div class="mt-8 space-y-4">
+                        <button id="reset-button" class="action-button w-full flex items-center justify-center gap-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                            Novo Jogo
+                        </button>
+                        <button id="show-answers-button" class="action-button w-full flex items-center justify-center gap-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-stone-400 disabled:cursor-not-allowed">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            Ver Respostas
+                        </button>
+                        <button id="back-to-themes-button" class="action-button w-full flex items-center justify-center gap-2 bg-stone-500 text-white rounded-lg hover:bg-stone-600">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                            Voltar aos Temas
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-60 items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg text-center transform transition-all scale-95 opacity-0" id="modal-content">
+            <div class="flex justify-between items-start">
+                <h2 id="modal-title" class="text-3xl font-extrabold text-teal-600 mb-4 text-left"></h2>
+                <button id="speak-button" class="action-button p-3 bg-sky-100 text-sky-600 rounded-full hover:bg-sky-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                </button>
+            </div>
+            <p id="modal-text" class="text-stone-600 text-lg mb-8 min-h-[60px] text-left"></p>
+            <div id="gemini-loader" class="hidden mb-4 justify-center items-center">
+                <div class="loader"></div>
+                <span class="ml-3 text-stone-500 text-lg">Pensando...</span>
+            </div>
+            <div class="flex flex-col gap-4">
+                 <button id="gemini-explain-button" class="action-button w-full bg-sky-500 text-white rounded-lg hover:bg-sky-600 disabled:bg-stone-400 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                    Me explique de outro jeito
+                </button>
+                <button id="modal-close-button" class="action-button w-full bg-teal-500 text-white rounded-lg hover:bg-teal-600">
+                    Continuar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-6 px-4">
+        <p class="text-sm text-stone-500">© 2025 Matheus Brasil. Todos os direitos reservados.</p>
+    </footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- CONFIGURAÇÕES DO JOGO ---
+        const GRID_SIZE_EASY = 10;
+        const GRID_SIZE_NORMAL = 14;
+        const THEMES = {
+            'celular': {
+                title: 'Celular Básico',
+                icon: '📱',
+                words: [
+                    { word: 'LIGACAO', definition: 'É quando você usa o celular para falar com outra pessoa em tempo real.' },
+                    { word: 'MENSAGEM', definition: 'Um texto curto que você envia para outras pessoas, como um bilhete digital.' },
+                    { word: 'CONTATO', definition: 'É um número de telefone e nome de alguém que você guardou na memória do celular.' },
+                    { word: 'CAMERA', definition: 'A parte do celular que serve para tirar fotos e gravar vídeos.' },
+                    { word: 'BATERIA', definition: 'A "pilha" interna do celular que dá energia para ele funcionar.' },
+                    { word: 'APLICATIVO', definition: 'Um programinha que você instala no celular para fazer algo, como ver o mapa ou pedir comida.' },
+                    { word: 'VOLUME', definition: 'Serve para deixar o som do celular mais alto ou mais baixo.' },
+                    { word: 'TOQUE', definition: 'O som que o celular faz quando alguém está te ligando.' },
+                    { word: 'GALERIA', definition: 'O lugar onde todas as suas fotos e vídeos ficam guardados no celular.' },
+                    { word: 'AJUSTES', definition: 'O menu onde você pode configurar e personalizar o seu celular, como o brilho da tela.' }
+                ]
+            },
+            'computador': {
+                title: 'Computador para Iniciantes',
+                icon: '💻',
+                words: [
+                    { word: 'MONITOR', definition: 'A tela do computador, onde você vê tudo o que está acontecendo.' },
+                    { word: 'PASTA', definition: 'Um lugar para organizar e guardar seus arquivos, como uma pasta de papel.' },
+                    { word: 'ARQUIVO', definition: 'Qualquer item guardado no computador, como um texto, uma foto ou uma música.' },
+                    { word: 'JANELA', definition: 'Um quadro na tela que mostra um programa ou pasta aberta.' },
+                    { word: 'CURSOR', definition: 'A setinha que se move na tela quando você mexe o mouse.' },
+                    { word: 'DESKTOP', definition: 'A tela principal do computador, também chamada de "Área de Trabalho".' },
+                    { word: 'CLIQUE', definition: 'O ato de apertar o botão do mouse para selecionar ou abrir algo.' },
+                    { word: 'SALVAR', definition: 'Guardar um trabalho ou arquivo para não perder o que foi feito.' },
+                    { word: 'IMPRESSORA', definition: 'A máquina que passa para o papel o que está na tela do computador.' },
+                    { word: 'LIXEIRA', definition: 'Para onde vão os arquivos que você apaga. Você pode recuperá-los de lá.' }
+                ]
+            },
+            'internet': {
+                title: 'Internet Segura',
+                icon: '🌐',
+                words: [
+                    { word: 'ANTIVIRUS', definition: 'Um programa que protege seu computador contra "vírus" e ameaças da internet.' },
+                    { word: 'PHISHING', definition: 'Uma tentativa de golpe para roubar suas senhas, fingindo ser um site ou e-mail confiável.' },
+                    { word: 'SPAM', definition: 'E-mails ou mensagens indesejadas, geralmente com propaganda, que lotam sua caixa de entrada.' },
+                    { word: 'DOWNLOAD', definition: 'Significa "baixar" um arquivo da internet para o seu computador ou celular.' },
+                    { word: 'UPLOAD', definition: 'O contrário de download. É "subir" ou enviar um arquivo do seu aparelho para a internet.' },
+                    { word: 'NAVEGADOR', definition: 'O programa que você usa para entrar em sites na internet, como o Chrome ou o Firefox.' },
+                    { word: 'PRIVACIDADE', definition: 'O seu direito de manter suas informações pessoais seguras e controladas.' },
+                    { word: 'COOKIES', definition: 'Pequenos arquivos que os sites guardam no seu navegador para lembrar de você.' },
+                    { word: 'FIREWALL', definition: 'Uma barreira de proteção que controla o que entra e sai do seu computador pela internet.' },
+                    { word: 'ATUALIZAR', definition: 'Manter seus aplicativos e sistema em dia para ter mais segurança e novidades.' }
+                ]
+            },
+            'programacao': {
+                title: 'Programação Básica',
+                icon: '⌨️',
+                words: [
+                    { word: 'CODIGO', definition: 'As instruções escritas em uma linguagem que o computador entende para executar uma tarefa.' },
+                    { word: 'ALGORITMO', definition: 'Uma sequência de passos, como uma receita de bolo, para resolver um problema.' },
+                    { word: 'VARIAVEL', definition: 'Uma "caixinha" na memória do computador que guarda um valor ou informação.' },
+                    { word: 'FUNCAO', definition: 'Um bloco de código que realiza uma tarefa específica e pode ser usado várias vezes.' },
+                    { word: 'LOOP', definition: 'Uma estrutura que repete um conjunto de instruções várias vezes. É como dar "voltas".' },
+                    { word: 'BUG', definition: 'Um erro no código que faz o programa se comportar de forma inesperada.' },
+                    { word: 'DEBUG', definition: 'O processo de encontrar e corrigir os "bugs" (erros) em um programa.' },
+                    { word: 'IFELSE', definition: 'Uma condição que diz ao programa: "SE (if) isto for verdade, faça A, SENÃO (else), faça B".' },
+                    { word: 'TEXTO', definition: 'Um tipo de dado usado para representar palavras e frases, também chamado de "string".' },
+                    { word: 'NUMERO', definition: 'Um tipo de dado usado para representar valores numéricos para fazer cálculos.' }
+                ]
+            }
+        };
+
+        // --- VARIÁVEIS DE ESTADO ---
+        let currentDifficulty = 'normal';
+        let currentThemeKey = null;
+        let WORDS_DATA = [];
+        let grid = [];
+        let placedWords = [];
+        let foundWords = [];
+        let isSelecting = false;
+        let selectionStart = null;
+        let currentSelection = [];
+        let currentWordForGemini = null;
+
+        // --- ELEMENTOS DO DOM ---
+        const homeScreen = document.getElementById('home-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const difficultyEasyBtn = document.getElementById('difficulty-easy');
+        const difficultyNormalBtn = document.getElementById('difficulty-normal');
+        const themeSelectionContainer = document.getElementById('theme-selection');
+        const gameTitle = document.getElementById('game-title');
+        const gridContainer = document.getElementById('grid-container');
+        const wordListElement = document.getElementById('word-list');
+        const resetButton = document.getElementById('reset-button');
+        const backToThemesButton = document.getElementById('back-to-themes-button');
+        const showAnswersButton = document.getElementById('show-answers-button');
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modal-content');
+        const modalTitle = document.getElementById('modal-title');
+        const modalText = document.getElementById('modal-text');
+        const modalCloseButton = document.getElementById('modal-close-button');
+        const speakButton = document.getElementById('speak-button');
+        const geminiExplainButton = document.getElementById('gemini-explain-button');
+        const geminiLoader = document.getElementById('gemini-loader');
+
+        // --- FUNÇÕES DE NAVEGAÇÃO E INICIALIZAÇÃO ---
+
+        function showHomeScreen() {
+            gameScreen.classList.add('hidden');
+            homeScreen.classList.remove('hidden');
+        }
+        
+        function showGameScreen() {
+            homeScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+        }
+        
+        function setDifficulty(level) {
+            currentDifficulty = level;
+            difficultyEasyBtn.classList.toggle('active', level === 'easy');
+            difficultyNormalBtn.classList.toggle('active', level === 'normal');
+        }
+
+        function initializeThemes() {
+            themeSelectionContainer.innerHTML = '';
+            Object.keys(THEMES).forEach(key => {
+                const theme = THEMES[key];
+                const button = document.createElement('button');
+                button.className = 'theme-button text-left p-6 rounded-2xl shadow-lg';
+                button.innerHTML = `<span class="text-4xl">${theme.icon}</span><h3 class="mt-4 text-2xl font-bold text-teal-700">${theme.title}</h3>`;
+                button.onclick = () => {
+                    currentThemeKey = key;
+                    startGame();
+                };
+                themeSelectionContainer.appendChild(button);
+            });
+
+            const comingSoonCard = document.createElement('div');
+            comingSoonCard.className = 'text-left p-6 rounded-2xl shadow-lg bg-gradient-to-br from-stone-200 to-stone-300 flex flex-col items-center justify-center text-center';
+            comingSoonCard.innerHTML = `<span class="text-4xl">🌟</span><h3 class="mt-4 text-2xl font-bold text-stone-600">Novos temas em breve!</h3><p class="text-stone-500 mt-1">Estamos preparando mais diversão para você.</p>`;
+            themeSelectionContainer.appendChild(comingSoonCard);
+        }
+
+        function startGame() {
+            if (!currentThemeKey) return;
+            WORDS_DATA = THEMES[currentThemeKey].words;
+            gameTitle.textContent = `${THEMES[currentThemeKey].icon} ${THEMES[currentThemeKey].title}`;
+            showGameScreen();
+            foundWords = [];
+            placedWords = [];
+            isSelecting = false;
+            selectionStart = null;
+            currentSelection = [];
+            showAnswersButton.disabled = false;
+            createEmptyGrid();
+            placeWordsInGrid();
+            fillEmptyCells();
+            renderGrid();
+            renderWordList();
+            closeModal();
+        }
+        
+        // --- FUNÇÕES DE ACESSIBILIDADE ---
+        function speakText(text) {
+            window.speechSynthesis.cancel();
+            if (!text) return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'pt-BR';
+            utterance.rate = 0.95;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- FUNÇÕES DE IA (GEMINI) ---
+        async function getGeminiExplanation(word, originalDefinition) {
+            geminiExplainButton.disabled = true;
+            geminiLoader.classList.remove('hidden');
+            geminiLoader.classList.add('flex');
+            modalText.classList.add('hidden');
+            speakText(''); // Para a fala, se estiver ativa
+            const prompt = `Você é um assistente amigável e paciente, especializado em ensinar tecnologia para pessoas idosas no Brasil. Sua tarefa é dar uma segunda explicação para um termo tecnológico, de forma ainda mais simples e usando uma analogia com o dia a dia. Termo: "${word}". Primeira explicação: "${originalDefinition}". Sua nova explicação (amigável, curta e com analogia):`;
+            try {
+                // **LEMBRE-SE DE EXCLUIR A CHAVE ANTIGA E USAR UMA NOVA E SEGURA AQUI**
+                const apiKey = "SUA_NOVA_CHAVE_SEGURA_AQUI"; 
+                
+                if (apiKey === "SUA_NOVA_CHAVE_SEGURA_AQUI") {
+                    throw new Error("API Key não configurada. Por favor, adicione sua chave da API do Gemini.");
+                }
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    throw new Error(`Erro na API: ${response.status} - ${errorData?.error?.message || response.statusText}`);
+                }
+                const result = await response.json();
+                if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    const newExplanation = result.candidates[0].content.parts[0].text;
+                    modalText.innerHTML = `<span class="font-bold text-sky-600">Outra explicação:</span><br>${newExplanation}`;
+                    // Áudio automático da IA desativado.
+                    // speakText(newExplanation); 
+                } else { throw new Error("Resposta da API inválida."); }
+            } catch (error) {
+                console.error("Erro ao chamar a API Gemini:", error);
+                modalText.textContent = `Desculpe, ocorreu um erro. (${error.message})`;
+            } finally {
+                geminiExplainButton.disabled = false;
+                geminiLoader.classList.add('hidden');
+                modalText.classList.remove('hidden');
+            }
+        }
+
+        // --- LÓGICA DO JOGO ---
+        function createEmptyGrid() { 
+            const gridSize = currentDifficulty === 'easy' ? GRID_SIZE_EASY : GRID_SIZE_NORMAL;
+            grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(null)); 
+        }
+        function placeWordsInGrid() {
+            const gridSize = currentDifficulty === 'easy' ? GRID_SIZE_EASY : GRID_SIZE_NORMAL;
+            const directions = currentDifficulty === 'easy' 
+                ? [{ x: 1, y: 0 }, { x: 0, y: 1 }] 
+                : [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }, { x: -1, y: 1 }];
+            WORDS_DATA.forEach(({ word }) => {
+                let placed = false;
+                let attempts = 0;
+                while (!placed && attempts < 200) {
+                    const dir = directions[Math.floor(Math.random() * directions.length)];
+                    const reversed = Math.random() > 0.5;
+                    const wordToPlace = reversed ? word.split('').reverse().join('') : word;
+                    const startX = Math.floor(Math.random() * gridSize);
+                    const startY = Math.floor(Math.random() * gridSize);
+                    if (canPlaceWord(wordToPlace, startX, startY, dir)) {
+                        const wordCells = [];
+                        for (let i = 0; i < wordToPlace.length; i++) {
+                            const x = startX + i * dir.x, y = startY + i * dir.y;
+                            grid[y][x] = wordToPlace[i];
+                            wordCells.push({ x, y });
+                        }
+                        placedWords.push({ word, cells: wordCells });
+                        placed = true;
+                    }
+                    attempts++;
+                }
+            });
+        }
+        function canPlaceWord(word, startX, startY, dir) {
+            const gridSize = currentDifficulty === 'easy' ? GRID_SIZE_EASY : GRID_SIZE_NORMAL;
+            for (let i = 0; i < word.length; i++) {
+                const x = startX + i * dir.x, y = startY + i * dir.y;
+                if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return false;
+                if (grid[y][x] !== null && grid[y][x] !== word[i]) return false;
+            }
+            return true;
+        }
+        function fillEmptyCells() {
+            const gridSize = currentDifficulty === 'easy' ? GRID_SIZE_EASY : GRID_SIZE_NORMAL;
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    if (grid[y][x] === null) grid[y][x] = alphabet[Math.floor(Math.random() * alphabet.length)];
+                }
+            }
+        }
+        function showAnswers() {
+            WORDS_DATA.forEach(({ word }) => {
+                if (!foundWords.includes(word)) {
+                    const wordInfo = placedWords.find(info => info.word === word);
+                    if (wordInfo) {
+                        wordInfo.cells.forEach(coords => getCellElement(coords.x, coords.y)?.classList.add('found'));
+                        document.getElementById(`word-${word}`)?.classList.add('word-found');
+                        foundWords.push(word);
+                    }
+                }
+            });
+            showAnswersButton.disabled = true;
+        }
+        function renderGrid() {
+            const gridSize = currentDifficulty === 'easy' ? GRID_SIZE_EASY : GRID_SIZE_NORMAL;
+            gridContainer.innerHTML = '';
+            gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, minmax(0, 1fr))`;
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.textContent = grid[y][x];
+                    cell.dataset.x = x; cell.dataset.y = y;
+                    cell.className = 'letter-cell flex items-center justify-center aspect-square cursor-pointer';
+                    cell.addEventListener('mousedown', handleMouseDown);
+                    cell.addEventListener('mouseover', handleMouseOver);
+                    cell.addEventListener('mouseup', handleMouseUp);
+                    cell.addEventListener('touchstart', handleMouseDown, { passive: false });
+                    cell.addEventListener('touchmove', handleMouseOver, { passive: false });
+                    cell.addEventListener('touchend', handleMouseUp);
+                    gridContainer.appendChild(cell);
+                }
+            }
+        }
+        function renderWordList() {
+            wordListElement.innerHTML = '';
+            WORDS_DATA.forEach(({ word }) => {
+                const el = document.createElement('div');
+                el.textContent = word;
+                el.id = `word-${word}`;
+                el.className = 'transition-all';
+                wordListElement.appendChild(el);
+            });
+        }
+        function getCoordsFromEvent(e) {
+            let target;
+            if (e.type.startsWith('touch')) {
+                const touch = e.touches[0] || e.changedTouches[0];
+                target = document.elementFromPoint(touch.clientX, touch.clientY);
+            } else { target = e.target; }
+            if (target?.classList.contains('letter-cell')) {
+                return { x: parseInt(target.dataset.x), y: parseInt(target.dataset.y) };
+            }
+            return null;
+        }
+        function handleMouseDown(e) { e.preventDefault(); const c = getCoordsFromEvent(e); if (!c) return; isSelecting = true; selectionStart = c; clearSelectionClasses(); currentSelection = [getCellElement(c.x, c.y)]; updateSelectionClasses(); }
+        function handleMouseOver(e) { e.preventDefault(); if (!isSelecting || !selectionStart) return; const c = getCoordsFromEvent(e); if (!c) return; const { dx, dy, isStraightLine } = getDirectionInfo(selectionStart, c); if (isStraightLine) { currentSelection = []; const dist = Math.max(Math.abs(c.x - selectionStart.x), Math.abs(c.y - selectionStart.y)); for (let i = 0; i <= dist; i++) { const cell = getCellElement(selectionStart.x + i * dx, selectionStart.y + i * dy); if (cell) currentSelection.push(cell); } clearSelectionClasses(); updateSelectionClasses(); } }
+        function handleMouseUp() { if (!isSelecting) return; isSelecting = false; checkSelectedWord(); clearSelectionClasses(); selectionStart = null; }
+        function checkSelectedWord() {
+            if (currentSelection.length < 2) return;
+            const selectedString = currentSelection.map(cell => cell.textContent).join('');
+            const reversedSelectedString = selectedString.split('').reverse().join('');
+            const foundWordData = WORDS_DATA.find(({ word }) => !foundWords.includes(word) && (word === selectedString || word === reversedSelectedString));
+            if (foundWordData) {
+                foundWords.push(foundWordData.word);
+                currentSelection.forEach(c => c.classList.add('found'));
+                document.getElementById(`word-${foundWordData.word}`)?.classList.add('word-found');
+                currentWordForGemini = foundWordData;
+                if (foundWords.length === WORDS_DATA.length) {
+                    showModal('Parabéns!', `Você encontrou todas as palavras do tema "${THEMES[currentThemeKey].title}"!`, true);
+                } else {
+                    showModal(foundWordData.word, foundWordData.definition);
+                }
+            }
+        }
+        function clearSelectionClasses() { document.querySelectorAll('.letter-cell.selecting').forEach(c => { c.classList.remove('selecting'); c.style.transform = ''; }); }
+        function updateSelectionClasses() { currentSelection.forEach(c => c.classList.add('selecting')); }
+        function getCellElement(x, y) { return gridContainer.querySelector(`[data-x='${x}'][data-y='${y}']`); }
+        function getDirectionInfo(start, end) { const dxR = end.x - start.x, dyR = end.y - start.y; return { dx: Math.sign(dxR), dy: Math.sign(dyR), isStraightLine: dyR === 0 || dxR === 0 || Math.abs(dxR) === Math.abs(dyR) }; }
+        
+        function showModal(title, text, isVictory = false) {
+            modalTitle.textContent = title;
+            modalText.innerHTML = text;
+            modalText.classList.remove('hidden');
+            geminiExplainButton.classList.toggle('hidden', isVictory);
+            speakButton.classList.toggle('hidden', isVictory);
+            if (!isVictory) geminiExplainButton.disabled = false;
+            geminiLoader.classList.add('hidden');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                // Áudio automático do modal desativado.
+                // if (!isVictory) speakText(text); 
+            }, 10);
+        }
+
+        function closeModal() {
+            window.speechSynthesis.cancel();
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+        
+        // --- LISTENERS GERAIS ---
+        difficultyEasyBtn.addEventListener('click', () => setDifficulty('easy'));
+        difficultyNormalBtn.addEventListener('click', () => setDifficulty('normal'));
+        resetButton.addEventListener('click', startGame);
+        backToThemesButton.addEventListener('click', showHomeScreen);
+        showAnswersButton.addEventListener('click', showAnswers);
+        speakButton.addEventListener('click', () => speakText(modalText.textContent));
+        modalCloseButton.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+        geminiExplainButton.addEventListener('click', () => { if (currentWordForGemini) getGeminiExplanation(currentWordForGemini.word, currentWordForGemini.definition); });
+        document.addEventListener('mouseup', handleMouseUp);
+
+        // --- INICIALIZAÇÃO ---
+        initializeThemes();
+        setDifficulty('normal'); // Define normal como padrão inicial
+        showHomeScreen();
+    });
+</script>
+
+</body>
+</html>
